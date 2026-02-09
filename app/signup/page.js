@@ -15,10 +15,10 @@ export default function Signup() {
     try {
         const user = await createUserWithEmailAndPassword(auth, email, password)
         await setDoc(doc(db, "users", user.user.uid), {
-            email,
-            password,
-            createdAt: new Date()
-        })
+  email,
+  createdAt: new Date()
+});
+
         router.push("/dashboard")
     } catch (error) {
         alert("Signup failed: " + error.message)
