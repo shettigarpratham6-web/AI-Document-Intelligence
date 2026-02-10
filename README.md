@@ -44,7 +44,7 @@ AI Document Intelligence solves this by:
 
 
 
-
+```mermaid
 flowchart TD
     User[User Interface] -->|Upload Document| Frontend[Frontend Layer]
     Frontend --> Backend[Backend API]
@@ -54,7 +54,8 @@ flowchart TD
     WorkflowEngine --> Insights[Insights & Summaries]
     Insights --> Frontend
     
-![Workflow](https://mermaid.ink/img/YOUR_BASE64_ENCODED_DIAGRAM) 
+
+
 
 
 
