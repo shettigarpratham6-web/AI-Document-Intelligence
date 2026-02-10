@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { auth } from "../../lib/firebase";
+import { useEffect, useState, useRef } from "react";
+
+import { auth, db } from "../../lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { extractTextFromImage } from "../../lib/ocr";
 import { extractExpiryFromText } from "../../lib/expiry";
 
 export default function Dashboard() {
+  const fileInputRef = useRef(null);
   const router = useRouter();
 
   const [userEmail, setUserEmail] = useState("");
@@ -15,7 +18,7 @@ export default function Dashboard() {
   const [expiryDate, setExpiryDate] = useState("");
   const [reminderTime, setReminderTime] = useState("");
 
-  // 🔐 Protect route
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -27,7 +30,7 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [router]);
 
-  // 🔁 Load saved data
+  
   useEffect(() => {
     const savedImage = localStorage.getItem("docImage");
     const savedExpiry = localStorage.getItem("expiryDate");
@@ -36,7 +39,7 @@ export default function Dashboard() {
     if (savedExpiry) setExpiryDate(savedExpiry);
   }, []);
 
-  // 📤 Upload + OCR + expiry extraction
+  
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -54,15 +57,26 @@ export default function Dashboard() {
       setImage(base64);
 
       try {
-        // 1️⃣ OCR
+       
         const text = await extractTextFromImage(base64);
         console.log("OCR TEXT:", text);
 
-        // 2️⃣ Expiry extraction (NO AI)
+        
         const expiry = extractExpiryFromText(text);
 
         setExpiryDate(expiry);
         localStorage.setItem("expiryDate", expiry);
+
+        
+        await setDoc(
+          doc(db, "users", auth.currentUser.uid),
+          {
+            email: auth.currentUser.email,
+            expiryDate: expiry,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
       } catch (error) {
         alert("Failed to process image");
       }
@@ -71,7 +85,31 @@ export default function Dashboard() {
     reader.readAsDataURL(file);
   };
 
-  // ⏰ Reminder
+ 
+  const removeDocument = async () => {
+    localStorage.removeItem("docImage");
+    localStorage.removeItem("expiryDate");
+
+    setImage(null);
+    setExpiryDate("");
+    setReminderTime("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+   
+    await setDoc(
+      doc(db, "users", auth.currentUser.uid),
+      {
+        expiryDate: "",
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  };
+
+ 
   const setReminder = () => {
     if (!reminderTime) {
       alert("Select reminder time");
@@ -98,54 +136,76 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">Dashboard</h1>
-        <button
-          className="text-sm text-red-600"
-          onClick={() => signOut(auth)}
-        >
-          Logout
-        </button>
-      </div>
-
-      <p className="mt-4">
-        <strong>Email:</strong> {userEmail}
-      </p>
-
-      <hr className="my-4" />
-
-      <input type="file" accept="image/*" onChange={handleUpload} />
-
-      {image && (
-        <img
-          src={image}
-          className="mt-4 w-60 rounded"
-          alt="Uploaded"
-        />
-      )}
-
-      {expiryDate && (
-        <p className="mt-4">
-          <strong>Expiry Date:</strong> {expiryDate}
-        </p>
-      )}
-
-      {expiryDate && (
-        <>
-          <input
-            type="datetime-local"
-            className="border p-2 mt-3 w-full"
-            onChange={(e) => setReminderTime(e.target.value)}
-          />
+    <div className="min-h-screen bg-gray-100 py-10">
+      <div className="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-black">Dashboard</h1>
           <button
-            className="bg-black text-white p-2 w-full mt-2"
-            onClick={setReminder}
+            className="text-sm text-red-600 hover:underline"
+            onClick={() => signOut(auth)}
           >
-            Set Reminder
+            Logout
           </button>
-        </>
-      )}
+        </div>
+
+        <p className="mt-4 text-sm text-gray-700">
+          <span className="font-semibold">Email:</span> {userEmail}
+        </p>
+
+        <hr className="my-5" />
+
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleUpload}
+          className="block w-full text-sm text-gray-700
+                     file:mr-4 file:py-2 file:px-4
+                     file:rounded file:border-0
+                     file:bg-black file:text-white
+                     hover:file:bg-gray-800 cursor-pointer"
+        />
+
+        {image && (
+          <img
+            src={image}
+            className="mt-4 w-60 rounded-md border shadow-sm"
+            alt="Uploaded"
+          />
+        )}
+
+        {image && (
+          <button
+            className="mt-2 text-sm text-red-600 hover:underline"
+            onClick={removeDocument}
+          >
+            Remove Document
+          </button>
+        )}
+
+        {expiryDate && (
+          <p className="mt-4 text-gray-800">
+            <span className="font-semibold">Expiry Date:</span>{" "}
+            {expiryDate}
+          </p>
+        )}
+
+        {expiryDate && (
+          <>
+            <input
+              type="datetime-local"
+              className="border border-gray-300 rounded p-2 mt-4 w-full focus:outline-none focus:ring-2 focus:ring-black text-gray-900"
+              onChange={(e) => setReminderTime(e.target.value)}
+            />
+            <button
+              className="bg-black text-white p-2 w-full mt-3 rounded hover:bg-gray-800 transition"
+              onClick={setReminder}
+            >
+              Set Reminder
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
