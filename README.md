@@ -7,9 +7,9 @@ AI Document Intelligence is a deployed SaaS application that leverages artificia
 ---
 
 ## Contributors / Team Members
-Pratham
-Ujwal U Shettigar
-Prajwal T Kulal
+# Pratham
+# Ujwal U Shettigar
+# Prajwal T Kulal
 
 ---
 
