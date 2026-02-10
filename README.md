@@ -54,13 +54,7 @@ flowchart TD
     WorkflowEngine --> Insights[Insights & Summaries]
     Insights --> Frontend
     
-    style User fill:#e1f5ff
-    style Frontend fill:#b3e5fc
-    style Backend fill:#81d4fa
-    style AIModels fill:#4fc3f7
-    style Database fill:#29b6f6
-    style WorkflowEngine fill:#03a9f4
-    style Insights fill:#039be5    
+![Workflow](https://mermaid.ink/img/YOUR_BASE64_ENCODED_DIAGRAM) 
 
 
 
