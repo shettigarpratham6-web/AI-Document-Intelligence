@@ -41,7 +41,7 @@ AI Document Intelligence solves this by:
 
 ## 🏗️ Architecture Diagram
 
-```mermaid
+
 flowchart TD
     User[User Interface] -->|Upload Document| Frontend
     Frontend --> Backend
@@ -50,12 +50,6 @@ flowchart TD
     AIModels --> WorkflowEngine[Workflow Engine]
     WorkflowEngine --> Insights[Insights & Summaries]
     Insights --> Frontend
-
-
-
-
-
-
 
 
 
